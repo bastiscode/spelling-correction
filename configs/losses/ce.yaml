@@ -1,0 +1,2 @@
+type: sequence_cross_entropy
+ignore_index: -1

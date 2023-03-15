@@ -1,0 +1,7 @@
+type: spelling_corruption
+prob: 0.2
+mode:
+  type: mixed
+  char_edit_prob: 0.2
+  artificial_prob: 0.33
+  misspellings_file: env(MISSPELLINGS_FILE) 

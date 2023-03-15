@@ -1,0 +1,20 @@
+type: switch
+configs:
+  - type: mask_corruption
+    prob: 0.4
+    mask_token: <mask>
+    mode:
+      type: char
+      min: 6
+      prob: 0.1
+  - type: mask_corruption
+    prob: 0.2
+    mask_token: <mask>
+    mode: 
+      type: char
+      min: 3
+      prob: 0.2
+probabilities:
+  - 0.2
+  - 0.8
+

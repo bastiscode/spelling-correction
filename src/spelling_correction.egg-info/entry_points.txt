@@ -1,0 +1,2 @@
+[console_scripts]
+sec = spelling_correction.api.cli:main

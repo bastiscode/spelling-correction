@@ -1,0 +1,9 @@
+- type: clean
+- type: normalize
+  scheme: NFKC
+- type: overwrite
+- type: byte_substring
+  max_bytes: eval(env(MAX_LENGTH:512) - 2)
+- file(spelling_corruption.yaml)
+- file(whitespace_corruption.yaml)
+- file(mask_corruption.yaml)

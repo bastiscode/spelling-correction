@@ -1,0 +1,38 @@
+[project]
+name = "spelling_correction"
+version = "0.1.0"
+description = "Detect and correct spelling errors in text."
+authors = [
+    { name = "Sebastian Walter", email = "swalter@cs.uni-freiburg.de" }
+]
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.8"
+
+keywords = ["nlp", "text", "correction", "spelling"]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Text Processing",
+    "Topic :: Utilities"
+]
+
+dependencies = [
+    "text-correction-utils>=0.1.4",
+]
+
+[project.scripts]
+"sec" = "spelling_correction.api.cli:main"
+
+[project.urls]
+Github = "https://github.com/ad-freiburg/spelling-correction"
+Website= "https://spelling-correction.cs.uni-freiburg.de"
+
+[tool.distutils.bdist_wheel]
+universal = true
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"

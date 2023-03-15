@@ -1,0 +1,8 @@
+tokenize:
+  type: bpe
+  merge_file: env(BPE_MERGE_FILE)
+special:
+  tokens: [<bos>, <eos>, <pad>, <lang:en>, <lang:de>]
+  pad: <pad>
+  prefix: [<bos>]
+  suffix: [<eos>]

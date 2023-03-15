@@ -1,0 +1,17 @@
+LICENSE
+README.md
+pyproject.toml
+src/spelling_correction/__init__.py
+src/spelling_correction/model.py
+src/spelling_correction/version.py
+src/spelling_correction.egg-info/PKG-INFO
+src/spelling_correction.egg-info/SOURCES.txt
+src/spelling_correction.egg-info/dependency_links.txt
+src/spelling_correction.egg-info/entry_points.txt
+src/spelling_correction.egg-info/requires.txt
+src/spelling_correction.egg-info/top_level.txt
+src/spelling_correction/api/__init__.py
+src/spelling_correction/api/cli.py
+src/spelling_correction/api/corrector.py
+src/spelling_correction/api/server.py
+src/spelling_correction/api/train.py
