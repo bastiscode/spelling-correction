@@ -82,31 +82,31 @@ train:
       - type: file
         path: abspath(env(EN_DATA_FILE))
         preprocessing: file(preprocessings/en_text_corruption.txt)
-        temp_dir: abspath(env(TMP))
+        # temp_dir: abspath(env(TMP))
         language: <lang:en>
       - type: file
         path: abspath(env(DE_DATA_FILE))
         preprocessing: file(preprocessings/de_text_corruption.txt)
-        temp_dir: abspath(env(TMP))
+        # temp_dir: abspath(env(TMP))
         language: <lang:de>
       - type: file
         path: abspath(env(FR_DATA_FILE))
         preprocessing: file(preprocessings/fr_text_corruption.txt)
-        temp_dir: abspath(env(TMP))
+        # temp_dir: abspath(env(TMP))
         language: <lang:fr>
       - type: file
         path: abspath(env(IT_DATA_FILE))
         preprocessing: file(preprocessings/it_text_corruption.txt)
-        temp_dir: abspath(env(TMP))
+        # temp_dir: abspath(env(TMP))
         language: <lang:it>
       - type: file
         path: abspath(env(ES_DATA_FILE))
         preprocessing: file(preprocessings/es_text_corruption.txt)
-        temp_dir: abspath(env(TMP))
+        # temp_dir: abspath(env(TMP))
         language: <lang:es>
       - type: file
         path: abspath(env(PT_DATA_FILE))
         preprocessing: file(preprocessings/pt_text_corruption.txt)
-        temp_dir: abspath(env(TMP))
+        # temp_dir: abspath(env(TMP))
         language: <lang:pt>
     val: env(VAL_LIMIT:10000)
