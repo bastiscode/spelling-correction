@@ -1,0 +1,24 @@
+type: switch
+configs:
+  # some space insertions and deletions
+  - type: switch
+    configs:
+      # moderate whitespace corruption
+      - type: whitespace_corruption
+        insert_whitespace_prob: 0.05
+        delete_whitespace_prob: 0.2
+      # extreme whitespace corruption
+      - type: whitespace_corruption
+        insert_whitespace_prob: 0.125
+        delete_whitespace_prob: 0.5
+    probabilities:
+      - 0.8
+      - 0.2
+  # spaces everywhere
+  - type: full_whitespaces
+  # no spaces at all
+  - type: no_whitespaces
+probabilities:
+  - 0.8
+  - 0.1
+  - 0.1

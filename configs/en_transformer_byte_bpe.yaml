@@ -15,7 +15,7 @@ model:
     dropout: 0.1
     mode: add_norm
     positional_embeddings: sinusoidal
-    max_length: eval(2 * env(MAX_LENGTH:512))
+    max_length: eval(env(MAX_LENGTH:512) * 4)
   encoder:
     type: grouping
     group_first: true
@@ -35,7 +35,7 @@ model:
     dropout: 0.1
     mode: add_norm
     positional_embeddings: sinusoidal
-    max_length: eval(2 * env(MAX_LENGTH:512))
+    max_length: eval(env(MAX_LENGTH:512) * 4)
   decoder:
     type: transformer
     memories: [encoder]
@@ -76,7 +76,7 @@ train:
     pipeline:
       tokenizer: file(tokenizers/byte.yaml)
       ignore_special_tokens: false
-      preprocessing: file(preprocessings/text_corruption.yaml)
+      preprocessing: file(preprocessings/en_text_corruption.yaml)
       labeling:
         type: sequence_generation
         tokenizer: file(tokenizers/bpe.yaml)
@@ -84,5 +84,5 @@ train:
       - type: file
         path: abspath(env(DATA_FILE))
         temp_dir: abspath(env(TMP))
-        language: en
+        language: <lang:en>
     val: env(VAL_LIMIT:10000)

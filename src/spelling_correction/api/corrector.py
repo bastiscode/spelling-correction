@@ -5,16 +5,14 @@ from typing import Any, Dict, List, Tuple, Optional, Union, Iterator
 
 import torch
 from torch import nn
-from torch import autocast
 
 from spelling_correction.model import model_from_config, EncoderDecoderWithHead
 
-from text_correction_utils import data, whitespace, tokenization
+from text_correction_utils import data, tokenization
 from text_correction_utils.api.corrector import ModelInfo
 from text_correction_utils.api import corrector
 from text_correction_utils.api.utils import device_info, to
 from text_correction_utils.inference import (
-    IdxSelectFn,
     eos_stop_fn,
     greedy_select_fn,
     sample_select_fn,
@@ -77,9 +75,7 @@ class SpellingCorrector(corrector.TextCorrector):
     @property
     def max_length(self) -> int:
         if self.cfg["model"]["type"] == "encoder_decoder_with_head":
-            return self.cfg["model"]["encoder_embedding"].get(
-                "max_length", 1024
-            ) // 2
+            return self.cfg["model"]["encoder_embedding"]["max_length"] // 4
         else:
             raise ValueError(
                 f"unknown model type: {self.cfg['model']['type']}"
@@ -203,9 +199,7 @@ class SpellingCorrector(corrector.TextCorrector):
                 }
             }
 
-        max_output_length = self.cfg["model"]["decoder_embedding"].get(
-            "max_length", 2 * self.max_length
-        )
+        max_output_length = self.cfg["model"]["decoder_embedding"]["max_length"]
 
         initial_token_ids = [
             self._initial_token_ids
