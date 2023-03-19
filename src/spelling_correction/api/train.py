@@ -66,31 +66,6 @@ class SpellingCorrectionTrainer(Trainer):
             label_info = api.to(label_info, self.info.device)
             for k, v in label_info.items():
                 inputs[f"target_{k}"] = v
-            # # target_token_ids = torch.from_numpy(
-            # #     label_info["token_ids"]
-            # # ).to(
-            # #     non_blocking=True,
-            # #     dtype=torch.long,
-            # #     device=self.info.device
-            # # )
-            # # shape = list(labels_np.shape)
-            # # inputs["target_token_ids"] = torch.zeros(
-            # #     shape,
-            # #     dtype=torch.long,
-            # #     device=self.info.device
-            # # )
-            # # inputs["target_padding_mask"] = torch.from_numpy(
-            # #     label_info["padding_mask"]
-            # # ).to(
-            # #     non_blocking=True,
-            # #     device=self.info.device
-            # # )
-            # # inputs["target_lengths"] = label_info["lengths"]
-            # print(f"target token ids: {inputs['target_token_ids']}")
-            # # print(f"target token ids: {target_token_ids}")
-            # print(f"target labels: {labels}")
-            # print(f"target padding mask: {inputs['target_padding_mask']}")
-            # print(f"target lengths: {inputs['target_lengths']}")
 
         return inputs, labels
 

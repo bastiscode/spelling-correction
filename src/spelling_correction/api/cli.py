@@ -1,7 +1,8 @@
 from io import TextIOWrapper
-from typing import Any, Iterator, Optional, Union
+from typing import Iterator, Optional, Union
 
 from text_correction_utils.api.cli import TextCorrectionCli
+from text_correction_utils.api.corrector import TextCorrector
 from text_correction_utils import data
 
 from spelling_correction import version
@@ -16,13 +17,16 @@ class SpellingCorrectionCli(TextCorrectionCli):
     def version(self) -> str:
         return version.__version__
 
-    def format_output(self, pred: Any, ipt: data.InferenceData, lang: Optional[str]) -> str:
-        if self.args.output_format == "text":
-            return str(pred)
-        else:
-            assert lang is not None or ipt.language is not None
-            lang = lang if ipt.language is None else ipt.language
-            return f"{pred}\t{lang}"
+    def setup_corrector(self) -> TextCorrector:
+        cor = super().setup_corrector()
+        # perform some additional setup
+        assert isinstance(cor, SpellingCorrector)
+        cor.set_inference_options(
+            strategy=self.args.search_strategy,
+            beam_width=self.args.beam_width,
+            sample_top_k=self.args.sample_top_k
+        )
+        return cor
 
     def correct_iter(
         self,
@@ -64,5 +68,24 @@ def main():
     parser = SpellingCorrectionCli.parser(
         "Spelling correction",
         "Detect and correct spelling errors in text"
+    )
+    parser.add_argument(
+        "--search-strategy",
+        choices=["greedy", "beam", "sample"],
+        type=str,
+        default="greedy",
+        help="Search strategy to use during decoding"
+    )
+    parser.add_argument(
+        "--beam-width",
+        type=int,
+        default=5,
+        help="Beam width to use for beam search decoding"
+    )
+    parser.add_argument(
+        "--sample-top-k",
+        type=int,
+        default=5,
+        help="Sample from top k tokens during sampling decoding"
     )
     SpellingCorrectionCli(parser.parse_args()).run()

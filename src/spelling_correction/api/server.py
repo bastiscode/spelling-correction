@@ -26,6 +26,9 @@ class SpellingCorrectionServer(TextCorrectionServer):
             elif "text" not in json:
                 return abort(Response("missing text in json", status=400))
 
+            # detections are optional
+            detections = json.get("detections", None)
+
             try:
                 with self.text_corrector(json["model"]) as cor:
                     if isinstance(cor, Error):

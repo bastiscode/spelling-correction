@@ -1,5 +1,4 @@
 from io import TextIOWrapper
-import math
 import os
 import sys
 from typing import Any, Dict, List, Tuple, Optional, Union, Iterator
@@ -14,20 +13,18 @@ from text_correction_utils import data, whitespace, tokenization
 from text_correction_utils.api.corrector import ModelInfo
 from text_correction_utils.api import corrector
 from text_correction_utils.api.utils import device_info, to
-from text_correction_utils.inference import IdxSelectFn, eos_stop_fn, search
+from text_correction_utils.inference import (
+    IdxSelectFn,
+    eos_stop_fn,
+    greedy_select_fn,
+    sample_select_fn,
+    search,
+    beam_search
+)
 
 _BASE_URL = "https://ad-publications.informatik.uni-freiburg.de/" \
     "ACL_whitespace_correction_transformer_BHW_2023.materials"
 _NAME_TO_ZIP = {
-    "eo_large_char_v1": "eo_large_char_v1.zip",
-    "eo_large_char": "eo_large_char_v2.zip",
-    "eo_large_byte": "eo_large_byte_v2.zip",
-    "eo_huge_byte": "eo_huge_byte_v2.zip",
-    "eo_medium_char_v1": "eo_medium_char_v1.zip",
-    "eo_medium_char": "eo_medium_char_v2.zip",
-    "eo_medium_byte": "eo_medium_byte_v2.zip",
-    "ed_large_char": "ed_large_v1.zip",
-    "ed_medium_char": "ed_medium_v1.zip",
 }
 
 
@@ -38,55 +35,19 @@ class SpellingCorrector(corrector.TextCorrector):
     def available_models(cls) -> List[ModelInfo]:
         return [
             ModelInfo(
-                name="eo_large_byte",
-                description="Byte-level model combining fast inference and good performance",
-                tags=["default", "lang::en", "arch::encoder-only", "input::byte"]
-            ),
-            ModelInfo(
-                name="eo_large_char",
-                description="Character-level model combining fast inference and good performance",
-                tags=["lang::en", "arch::encoder-only", "input::char"]
-            ),
-            ModelInfo(
-                name="eo_large_char_v1",
-                description="Character-level model combining fast inference and good performance, "
-                "trained with a different loss than eo_large_char",
-                tags=["lang::en", "arch::encoder-only", "input::char"]
-            ),
-            ModelInfo(
-                name="eo_huge_byte",
-                description="Larger and slower than eo_large_byte, but also more accuracte",
-                tags=["lang::en", "arch::encoder-only", "input::byte"]
-            ),
-            ModelInfo(
-                name="eo_medium_byte",
-                description="Smaller and faster than eo_large_byte, but less accurate",
-                tags=["lang::en", "arch::encoder-only", "input::byte"]
-            ),
-            ModelInfo(
-                name="eo_medium_char",
-                description="Smaller and faster than eo_large_char, but less accurate",
-                tags=["lang::en", "arch::encoder-only", "input::char"]
-            ),
-            ModelInfo(
-                name="eo_medium_char_v1",
-                description="Smaller and faster than eo_large_char_v1, but less accurate",
-                tags=["lang::en", "arch::encoder-only", "input::char"]
-            ),
-            ModelInfo(
-                name="ed_large_char",
-                description="Similar to eo_large_byte in size and performance, but slower due to "
-                "its autoregressive decoder",
-                tags=["lang::en", "arch::encoder-decoder",
-                      "input::char", "output::char"]
-            ),
-            ModelInfo(
-                name="ed_medium_char",
-                description="Smaller and faster than ed_large, but less accurate",
-                tags=["lang::en", "arch::encoder-decoder",
-                      "input::char", "output::char"]
+                name="dummy",
+                description="a dummy model",
+                tags=["default", "dummy"]
             ),
         ]
+
+    @classmethod
+    def supported_input_formats(cls) -> List[str]:
+        return ["text", "text_language", "text_detections_language"]
+
+    @classmethod
+    def supported_output_formats(cls) -> List[str]:
+        return ["text", "text_language"]
 
     @classmethod
     def _model_url(cls, model: str) -> str:
@@ -99,10 +60,12 @@ class SpellingCorrector(corrector.TextCorrector):
     @classmethod
     def _model_from_config(cls, cfg: Dict[str, Any]) -> nn.Module:
         input_tokenizer = tokenization.Tokenizer.from_config(
-            cfg["input_tokenizer"])
+            cfg["input_tokenizer"]
+        )
         if "output_tokenizer" in cfg:
             output_tokenizer = tokenization.Tokenizer.from_config(
-                cfg["output_tokenizer"])
+                cfg["output_tokenizer"]
+            )
         else:
             output_tokenizer = None
         return model_from_config(
@@ -113,15 +76,14 @@ class SpellingCorrector(corrector.TextCorrector):
 
     @property
     def max_length(self) -> int:
-        if self.cfg["model"]["type"] == "pretrained_encoder_with_head":
-            return 512
-        elif self.cfg["model"]["type"] == "encoder_with_head":
-            return self.cfg["model"]["embedding"].get("max_length", 512)
-        elif self.cfg["model"]["type"] == "encoder_decoder_with_head":
-            return self.cfg["model"]["encoder_embedding"].get("max_length", 512)
+        if self.cfg["model"]["type"] == "encoder_decoder_with_head":
+            return self.cfg["model"]["encoder_embedding"].get(
+                "max_length", 1024
+            ) // 2
         else:
             raise ValueError(
-                f"unknown model type: {self.cfg['model']['type']}")
+                f"unknown model type: {self.cfg['model']['type']}"
+            )
 
     @property
     def context_length(self) -> int:
@@ -147,38 +109,45 @@ class SpellingCorrector(corrector.TextCorrector):
         self.logger.info(
             f"running {self.name} whitespace corrector on device {device_info(self.device)}")
         self.input_tokenizer = tokenization.Tokenizer.from_config(
-            self.cfg["input_tokenizer"])
-        if "output_tokenizer" in self.cfg:
-            self.output_tokenizer = tokenization.Tokenizer.from_config(
-                self.cfg["output_tokenizer"])
-        else:
-            self.output_tokenizer = None
+            self.cfg["input_tokenizer"]
+        )
+        assert "output_tokenizer" in self.cfg
+        self.output_tokenizer = tokenization.Tokenizer.from_config(
+            self.cfg["output_tokenizer"]
+        )
+        self._initial_token_ids = self.output_tokenizer.tokenize("")
+        out_pfx = self.output_tokenizer.num_prefix_tokens()
 
-        self._encoder_only = self.cfg["model"]["type"].endswith(
-            "encoder_with_head")
-        self._pfx = self.input_tokenizer.num_prefix_tokens()
-        self._sfx = self.input_tokenizer.num_suffix_tokens()
+        # some options for inference
+        self._initial_token_ids = self._initial_token_ids.token_ids[:out_pfx]
+        self._eos_token_id = self.output_tokenizer.special_token_to_id("<eos>")
+        self._strategy = "greedy"
+        self._beam_width = 5
+        self._sample_top_k = 5
+        assert self._eos_token_id is not None
 
     def _build_inference_loader_config(self) -> Dict[str, Any]:
         input_tokenizer = tokenization.Tokenizer.from_config(
-            self.cfg["input_tokenizer"])
+            self.cfg["input_tokenizer"]
+        )
         pfx = input_tokenizer.num_prefix_tokens()
         sfx = input_tokenizer.num_suffix_tokens()
 
-        # use the training max sequence length here, even though some models work with arbitrary long sequences
+        # use the training max sequence length here,
+        # even though some models work with arbitrary long sequences
         # (e.g. LSTM), for better accuracy
         max_length = self.max_length - pfx - sfx
-        window_size = math.ceil(0.75 * max_length)
-        context_size = (max_length - window_size) // 2
-        if self.cfg["input_tokenizer"]["tokenize"]["type"] in {"byte", "byt5"}:
-            window_cfg = {"type": "byte", "max_bytes": max_length,
-                          "context_bytes": context_size}
-        elif self.cfg["input_tokenizer"]["tokenize"]["type"] == "character":
-            window_cfg = {"type": "character",
-                          "max_chars": max_length, "context_chars": context_size}
+        if self.cfg["input_tokenizer"]["tokenize"]["type"] == "byte":
+            window_cfg = {
+                "type": "byte",
+                "max_bytes": max_length,
+                "context_bytes": 0
+            }
         else:
             raise ValueError(
-                "the input tokenizer must be of type 'char' or 'byte' for whitespace correction")
+                "the input tokenizer must be of type 'byte' \
+                for spelling correction"
+            )
 
         return {
             "tokenizer_config": self.cfg["input_tokenizer"],
@@ -186,22 +155,24 @@ class SpellingCorrector(corrector.TextCorrector):
         }
 
     def _prepare_batch(self, batch: data.InferenceBatch) -> Dict[str, Any]:
-        token_ids_np, pad_mask_np, lengths, info = batch.tensors
+        token_ids_np, pad_mask_np, lengths, info = batch.tensors()
         inputs = {
-            "token_ids": torch.from_numpy(token_ids_np).to(non_blocking=True, device=self.device),
-            "padding_mask": torch.from_numpy(pad_mask_np).to(non_blocking=True, device=self.device),
+            "token_ids": torch.from_numpy(token_ids_np).to(
+                non_blocking=True,
+                device=self.device
+            ),
+            "padding_mask": torch.from_numpy(pad_mask_np).to(
+                non_blocking=True,
+                device=self.device
+            ),
             "lengths": lengths,
             **to(info, self.device)
         }
         return inputs
 
     def _inference(self, inputs: Dict[str, Any]) -> Any:
-        if self._encoder_only:
-            outputs, _ = self.model(**inputs)
-            return outputs
-
         assert isinstance(self.model, EncoderDecoderWithHead)
-        encoded, kwargs = self.model.encode(**inputs)
+        enc, kwargs = self.model.encode(**inputs)
 
         # decode fn gets in token ids and additional kwargs,
         # and return logits over next tokens
@@ -209,135 +180,102 @@ class SpellingCorrector(corrector.TextCorrector):
             token_ids: torch.Tensor,
             **kwargs: Any
         ) -> torch.Tensor:
-            decoded = self.model.decode(
+            assert isinstance(self.model, EncoderDecoderWithHead)
+            dec = self.model.decode(
                 token_ids,
+                kwargs.pop("memories"),
                 **kwargs
             )
-            return decoded
+            return dec
 
-        def _kwargs_sub_select_fn(kwargs: Dict[str, Any], mask: torch.Tensor) -> Dict[str, Any]:
+        def _kwargs_select_fn(
+            kwargs: Dict[str, Any],
+            mask: torch.Tensor
+        ) -> Dict[str, Any]:
             return {
-                "memories": {"encoder": kwargs["memory"][mask]},
-                "memory_padding_masks": {"encoder": kwargs["padding_mask"][mask]}
+                "memories": {
+                    k: v[mask]
+                    for k, v in kwargs["memories"].items()
+                },
+                "memory_padding_masks": {
+                    k: v[mask]
+                    for k, v in kwargs["memory_padding_masks"].items()
+                }
             }
 
         max_output_length = self.cfg["model"]["decoder_embedding"].get(
-            "max_length", 2 * self.max_length)
-
-        # use a custom select function that only allows select
-        # the whitespace token or the copy the corrpesonding token from
-        # the input
-        assert self.output_tokenizer is not None
-        eos_token_id = self.output_tokenizer.eos_token_id()
-        ws_token_id = self.output_tokenizer.tokenize(" ").token_ids[self._pfx]
-        lengths = inputs["lengths"]
-        non_ws_token_ids = [
-            [t for t in token_ids[self._pfx: length - self._sfx] if t != ws_token_id]
-            for token_ids, length in zip(inputs["token_ids"].tolist(), lengths)
-        ]
-        token_id_indices = [0] * len(non_ws_token_ids)
-        last_was_ws = [False] * len(non_ws_token_ids)
-
-        # this select funciton makes sure that we
-        # either copy the correct input char or add a whitespace,
-        # also makes sure that no doubled whitespaces are returned
-        def _custom_select_fn() -> IdxSelectFn:
-            def _select(scores: torch.Tensor, idx: int) -> Tuple[int, float]:
-                token_id_idx = token_id_indices[idx]
-                if token_id_idx >= len(non_ws_token_ids[idx]):
-                    # we are at the end of the input, select eos
-                    return eos_token_id, 0
-
-                input_token_id = non_ws_token_ids[idx][token_id_idx]
-                ws_score = scores[ws_token_id]
-                input_token_score = scores[input_token_id]
-                if ws_score > input_token_score and not last_was_ws[idx]:
-                    last_was_ws[idx] = True
-                    return ws_token_id, float(ws_score)
-                else:
-                    token_id_indices[idx] += 1
-                    last_was_ws[idx] = False
-                    return input_token_id, float(input_token_score)
-
-            return _select
-
-        output = search(
-            decode_fn=_decode_fn,
-            initial_token_ids=[
-                [self.output_tokenizer.bos_token_id()]] * encoded.shape[0],
-            pad_token_id=self.output_tokenizer.pad_token_id(),
-            max_length=max_output_length,
-            select_fn=_custom_select_fn(),
-            stop_fn=eos_stop_fn(self.output_tokenizer.eos_token_id()),
-            device=self.device,
-            kwargs_sub_select_fn=_kwargs_sub_select_fn,
-            memory=encoded,
-            **kwargs
+            "max_length", 2 * self.max_length
         )
-        return output
+
+        initial_token_ids = [
+            self._initial_token_ids
+        ] * inputs["token_ids"].shape[0]
+        stop_fn = eos_stop_fn(self._eos_token_id)
+        if self._strategy == "beam" and self._beam_width > 1:
+            outputs = beam_search(
+                decode_fn=_decode_fn,
+                initial_token_ids=initial_token_ids,
+                vocab_size=self.output_tokenizer.vocab_size(),
+                pad_token_id=self.output_tokenizer.pad_token_id(),
+                max_length=max_output_length,
+                stop_fn=stop_fn,
+                device=self.device,
+                normalize_by_length=True,
+                alpha=1.0,
+                beam_width=self._beam_width,
+                kwargs_select_fn=_kwargs_select_fn,
+                memories=enc,
+                **kwargs
+            )
+            return [output[0].token_ids for output in outputs]
+        elif self._strategy == "sample" and self._sample_top_k > 1:
+            return search(
+                decode_fn=_decode_fn,
+                initial_token_ids=initial_token_ids,
+                pad_token_id=self.output_tokenizer.pad_token_id(),
+                max_length=max_output_length,
+                select_fn=sample_select_fn(self._sample_top_k),
+                stop_fn=stop_fn,
+                device=self.device,
+                kwargs_select_fn=_kwargs_select_fn,
+                memories=enc,
+                **kwargs
+            )
+        else:
+            return search(
+                decode_fn=_decode_fn,
+                initial_token_ids=initial_token_ids,
+                pad_token_id=self.output_tokenizer.pad_token_id(),
+                max_length=max_output_length,
+                select_fn=greedy_select_fn(),
+                stop_fn=stop_fn,
+                device=self.device,
+                kwargs_select_fn=_kwargs_select_fn,
+                memories=enc,
+                **kwargs
+            )
 
     def _process_results(
         self,
         items: List[data.InferenceItem],
         outputs: List[Any],
     ) -> data.InferenceData:
-        assert len(items) > 0 and len(items) == len(outputs)
-        if self._encoder_only:
-            merged_predictions = []
-            for item, output in zip(items, outputs):
-                context_start, window_start, window_end, _ = item.window
-                window_start -= context_start
-                window_end -= context_start
-                prediction = torch.argmax(
-                    output[self._pfx + window_start:self._pfx + window_end], dim=-1)
-                merged_predictions.extend(prediction.tolist())
-            repaired = whitespace.repair(
-                items[0].data.text, merged_predictions)
-            return data.InferenceData(repaired, language=items[0].data.language)
+        merged = "".join(
+            self.output_tokenizer.de_tokenize(output)
+            for output in outputs
+        )
+        return data.InferenceData(merged, language=items[0].data.language)
 
-        # only thing left to do here is swap back the unknown tokens
-        # with the original ones
-        assert self.output_tokenizer is not None
-        unk_token_id = self.output_tokenizer.unk_token_id()
-        out_pfx = self.output_tokenizer.num_prefix_tokens()
-        out_sfx = self.output_tokenizer.num_suffix_tokens()
-        merged = ""
-        for item, output in zip(items, outputs):
-            context_start, window_start, window_end, _ = item.window
-            window_start -= context_start
-            window_end -= context_start
-            input_chars = item.context_chars()
-            input_token_ids = item.tokenization.token_ids[self._pfx:-self._sfx]
-            assert len(input_chars) == len(input_token_ids)
-            input_unk_indices = [
-                i
-                for i, tok_id in enumerate(input_token_ids)
-                if tok_id == unk_token_id
-            ]
-            input_unk_chars = [input_chars[i] for i in input_unk_indices]
-            output_token_ids = output[out_pfx:-out_sfx]
-            output_unk_indices = [
-                i
-                for i, tok_id in enumerate(output_token_ids)
-                if tok_id == unk_token_id
-            ]
-            assert len(input_unk_indices) == len(output_unk_indices)
-            output_str = ""
-            start_idx = 0
-            for output_unk_idx, input_unk_char in zip(output_unk_indices, input_unk_chars):
-                output_str += self.output_tokenizer.de_tokenize(
-                    output_token_ids[start_idx:output_unk_idx])
-                start_idx = output_unk_idx + 1
-                output_str += input_unk_char
-            output_str += self.output_tokenizer.de_tokenize(
-                output_token_ids[start_idx:])
-            window_str = item.window_str()
-            output_str = whitespace.find_substring_ignoring_whitespace(
-                output_str, window_str)
-            assert output_str is not None
-            merged += output_str.lstrip()
-
-        return data.InferenceData(merged.rstrip(), language=items[0].data.language)
+    def set_inference_options(
+        self,
+        strategy: str = "greedy",
+        beam_width: int = 5,
+        sample_top_k: int = 5
+    ) -> None:
+        assert strategy in ["greedy", "beam", "sample"]
+        self._strategy = strategy
+        self._beam_width = beam_width
+        self._sample_top_k = sample_top_k
 
     def correct_text(
             self,
@@ -461,9 +399,11 @@ class SpellingCorrector(corrector.TextCorrector):
             num_threads: Optional[int] = None,
             show_progress: bool = False
     ) -> Optional[Iterator[str]]:
-        assert input_file_format in self.supported_input_formats(), f"unsupported input file format {input_file_format}, \
+        assert input_file_format in self.supported_input_formats(), \
+            f"unsupported input file format {input_file_format}, \
         must be one of {self.supported_input_formats()}"
-        assert output_file_format in self.supported_output_formats(), f"unsupported output file format {output_file_format}, \
+        assert output_file_format in self.supported_output_formats(), \
+            f"unsupported output file format {output_file_format}, \
         must be one of 'text' or 'text_language'"
         loader = self._get_loader(
             ([input_file], [language] if language is not None else None),
@@ -474,9 +414,9 @@ class SpellingCorrector(corrector.TextCorrector):
             file_format=input_file_format,
         )
 
-        file_name = input_file if len(
-            input_file) < 32 else f"...{input_file[-29:]}"
-        progress_desc = f"Correcting whitespaces in {file_name}"
+        file_name = input_file \
+            if len(input_file) < 32 else f"...{input_file[-29:]}"
+        progress_desc = f"Correcting spelling in {file_name}"
         progress_total = os.path.getsize(input_file)
         progress_unit = "byte"
 
