@@ -50,7 +50,8 @@ def generate(args: argparse.Namespace):
             os.makedirs(dirname, exist_ok=True)
 
     with open(args.output, "a", encoding="utf8") as of:
-        for i in range(0, len(words), args.batch_size):
+        batch_indices = list(range(0, len(words), args.batch_size))
+        for i in tqdm(batch_indices, desc="processing word batches"):
             word_batch = words[i:i + args.batch_size]
 
             misspellings = None
