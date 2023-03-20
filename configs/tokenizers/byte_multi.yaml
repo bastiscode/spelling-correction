@@ -19,7 +19,7 @@ special:
   prefix: [<bos>]
   suffix: [<eos>]
 language:
-  default: <lang:unk>
+  default_language: <lang:unk>
   languages:
     - <lang:en>
     - <lang:de>
