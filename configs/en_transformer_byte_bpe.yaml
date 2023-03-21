@@ -11,9 +11,10 @@ model:
   memory: encoder
   encoder_embedding:
     type: standard
-    embedding_dim: env(DIM:512)
+    embedding_dim: env(DIM:768)
     dropout: 0.1
     mode: add_norm
+    use_8bit: env(USE_8BIT:False)
     positional_embeddings: sinusoidal
     max_length: eval(env(MAX_LENGTH:512) * 4)
   encoder:
@@ -24,25 +25,26 @@ model:
     group_lengths: lengths
     encoder:
       type: transformer
-      dim: env(DIM:512)
+      dim: env(DIM:768)
       num_layers: eval(round(env(NUM_LAYERS:12) * 2/3))
-      heads: eval(env(DIM:512) // 64)
-      ffw_dim: eval(env(DIM:512) * 4)
+      heads: eval(env(DIM:768) // 64)
+      ffw_dim: eval(env(DIM:768) * 4)
       dropout: 0.1
   decoder_embedding:
     type: standard
-    embedding_dim: env(DIM:512)
+    embedding_dim: env(DIM:768)
     dropout: 0.1
     mode: add_norm
+    use_8bit: env(USE_8BIT:False)
     positional_embeddings: sinusoidal
     max_length: eval(env(MAX_LENGTH:512) * 4)
   decoder:
     type: transformer
     memories: [encoder]
-    dim: env(DIM:512)
+    dim: env(DIM:768)
     num_layers: eval(round(env(NUM_LAYERS:12) * 1/3))
-    heads: eval(env(DIM:512) // 64)
-    ffw_dim: eval(env(DIM:512) * 4)
+    heads: eval(env(DIM:768) // 64)
+    ffw_dim: eval(env(DIM:768) * 4)
     dropout: 0.1
 
 train:
@@ -57,6 +59,7 @@ train:
     type: adamw
     lr: env(LR:0.0001)
     weight_decay: 0.01
+    optim_bits: eval(8 if env(USE_8BIT:False) else 32)
   lr_scheduler:
     type: cosine_with_warmup
     warmup_steps: env(WARMUP_STEPS:0.01)
@@ -70,7 +73,7 @@ train:
     sort: true
     buffer_size: env(BATCH_LIMIT:32)
     prefetch_factor: env(PREFETCH_FACTOR:2048)
-    num_threads: eval(env(THREADS:None) or len(os.sched_getaffinity(0)) // 2)
+    num_threads: eval(env(THREADS:None) or len(os.sched_getaffinity(0)))
     batch_limit: eval(env(MAX_LENGTH:1024) * env(BATCH_LIMIT:32))
     batch_limit_type: padded_item_size
     pipeline:
