@@ -46,7 +46,7 @@ train_script=$(realpath $script_dir/../src/spelling_correction/api/train.py)
 train_cmd="python3 -W ignore $train_script --config $config --experiment $experiment"
 
 # set timeout to something slightly smaller than the jobs time limit
-time_out=${TIMEOUT:-23.75h}
+time_out=${TIMEOUT:-23.5h}
 if [[ $is_local == true || $force_local == true ]]; then
   echo "Starting local training with cmd $train_cmd"
   train_cmd="$train_cmd --platform local"
