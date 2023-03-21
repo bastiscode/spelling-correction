@@ -1,13 +1,13 @@
 FROM nvcr.io/nvidia/pytorch:22.05-py3
 
-WORKDIR /wsc
+WORKDIR /sec
 
 COPY . .
 
 RUN pip install .
 
-ENV WHITESPACE_CORRECTION_DOWNLOAD_DIR=/wsc/download
-ENV WHITESPACE_CORRECTION_CACHE_DIR=/wsc/cache
+ENV SPELLING_CORRECTION_DOWNLOAD_DIR=/sec/download
+ENV SPELLING_CORRECTION_CACHE_DIR=/sec/cache
 ENV PYTHONWARNINGS="ignore"
 
 ENTRYPOINT ["/opt/conda/bin/sec"]
