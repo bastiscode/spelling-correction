@@ -4,5 +4,5 @@ mode:
   type: artificial
   char_edit_prob: 0.25
   # artificial_prob: 0.5
-  characters_file: env(PT_CHAR_FILE:pt/pt_char_100k.txt)
+  characters_file: env(PT_CHAR_FILE:data/pt/pt_char_100k.txt)
   # misspellings_file: env(PT_MISSPELLINGS_FILE) 
