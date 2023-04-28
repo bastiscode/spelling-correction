@@ -80,7 +80,7 @@ class EncoderDecoderWithHead(Model):
         token_ids: torch.Tensor,
         **kwargs: Any
     ) -> Tuple[Dict[str, torch.Tensor], Dict[str, Any]]:
-        emb, pos_emb = self.encoder_embedding(token_ids, **kwargs)
+        emb, pos_emb, kwargs = self.encoder_embedding(token_ids, **kwargs)
         enc, kwargs = self.encoder(emb, pos_emb, **kwargs)
         kwargs["memory_padding_masks"] = {
             self.memory_name: kwargs.pop(self.memory_padding_mask)
@@ -98,7 +98,7 @@ class EncoderDecoderWithHead(Model):
             assert padding_mask is not None, \
                 "padding_mask must be provided during training"
             kwargs["padding_mask"] = padding_mask
-        emb, pos_emb = self.decoder_embedding(token_ids, **kwargs)
+        emb, pos_emb, kwargs = self.decoder_embedding(token_ids, **kwargs)
         dec, kwargs = self.decoder(
             emb,
             pos_emb,
