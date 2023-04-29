@@ -1,5 +1,5 @@
 experiment:
-  name: env(EXPERIMENT_NAME)
+  name: env(EXPERIMENT_NAME:multi_byte_large)
 
 seed: 22
 
@@ -49,8 +49,8 @@ train:
   mixed_precision: env(MIXED_PRECISION:true)
   mixed_precision_dtype: env(MIXED_PRECISION_DTYPE:fp16)
   clip_grad_norm: env(CLIP_GRAD_NORM:1.0)
-  num_epochs: env(NUM_EPOCHS:3)
-  eval_interval: eval(1 / env(EVAL_PER_EPOCH:10))
+  num_epochs: env(NUM_EPOCHS:1)
+  eval_interval: eval(1 / env(EVAL_PER_EPOCH:20))
   log_interval: eval(1 / env(LOG_PER_EPOCH:1000))
   loss: file(losses/env(LOSS:ce).yaml)
   optimizer:
@@ -58,11 +58,11 @@ train:
     lr: env(LR:0.0001)
     weight_decay: 0.01
   lr_scheduler:
-    type: cosine_with_warmup
+    type: multi_step_with_warmup
     warmup_steps: env(WARMUP_STEPS:0.01)
   metrics:
     text_generation:
-      max_items: 4
+      max_items: 8
   data:
     strategy: weighted
     shuffle: true

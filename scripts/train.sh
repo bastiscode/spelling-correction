@@ -3,7 +3,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --ntasks-per-node=1
 #SBATCH --nodes=1
-#SBATCH --job-name=training
+#SBATCH --job-name=model
 #SBATCH --open-mode=append
 #SBATCH --output=${EXPERIMENT}/train_%x_%j.slurm
 #SBATCH --mail-type=BEGIN,END,FAIL,REQUEUE
