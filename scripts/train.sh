@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --job-name=training
 #SBATCH --open-mode=append
-#SBATCH --output=train_%x_%j.slurm
+#SBATCH --output=${EXPERIMENT}/train_%x_%j.slurm
 #SBATCH --mail-type=BEGIN,END,FAIL,REQUEUE
 #SBATCH --time=24:00:00
 

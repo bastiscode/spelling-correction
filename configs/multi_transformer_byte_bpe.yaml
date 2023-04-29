@@ -51,7 +51,7 @@ train:
   clip_grad_norm: env(CLIP_GRAD_NORM:1.0)
   num_epochs: env(NUM_EPOCHS:3)
   eval_interval: eval(1 / env(EVAL_PER_EPOCH:10))
-  log_interval: eval(1 / env(LOG_PER_EPOCH:100))
+  log_interval: eval(1 / env(LOG_PER_EPOCH:1000))
   loss: file(losses/env(LOSS:ce).yaml)
   optimizer:
     type: adamw
@@ -70,7 +70,7 @@ train:
     buffer_size: env(BATCH_LIMIT:32)
     prefetch_factor: env(PREFETCH_FACTOR:2048)
     num_threads: eval(env(THREADS:None) or len(os.sched_getaffinity(0)))
-    batch_limit: eval(env(MAX_LENGTH:1024) * env(BATCH_LIMIT:32))
+    batch_limit: eval(env(MAX_LENGTH:512) * env(BATCH_LIMIT:32))
     batch_limit_type: padded_item_size
     default_language: <lang:unk>
     pipeline:
