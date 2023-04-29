@@ -60,6 +60,8 @@ train:
   lr_scheduler:
     type: multi_step_with_warmup
     warmup_steps: env(WARMUP_STEPS:0.01)
+    steps: [0.5, 0.75, 0.9]
+    factors: [0.5, 0.2, 0.1]
   metrics:
     text_generation:
       max_items: 8
