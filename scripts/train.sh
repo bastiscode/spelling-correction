@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --job-name=model
 #SBATCH --open-mode=append
-#SBATCH --output=${EXPERIMENT}/train_%x_%j.slurm
+#SBATCH --output=${EXPERIMENT}/train.log
 #SBATCH --mail-type=BEGIN,END,FAIL,REQUEUE
 #SBATCH --time=24:00:00
 
@@ -40,6 +40,7 @@ export WORLD_SIZE=$world_size
 
 config=${CONFIG?"env var CONFIG not found"}
 experiment=${EXPERIMENT?"env var EXPERIMENT not found"}
+mkdir -p $experiment
 
 # TODO: change this to the path of your training script
 train_script=$(realpath $script_dir/../src/spelling_correction/api/train.py)
