@@ -69,7 +69,7 @@ train:
     strategy: weighted
     shuffle: true
     sort: true
-    limit: env(TRAIN_LIMIT:None)
+    limit: env(TRAIN_LIMIT:null)
     max_length: eval(env(MAX_LENGTH:512) // 4)
     max_length_scheduler:
       type: multi_step
