@@ -1,20 +1,15 @@
 - file(clean_and_normalize.yaml)
 - type: switch
   configs:
-    - file(fr/spelling_corruption.yaml)
-    - type: none
-  probabilities:
-    - 0.8
-    - 0.2
-- type: switch
-  configs: 
     - type: chain
       configs:
+        - file(fr/spelling_corruption.yaml)
         - file(whitespace/whitespace_corruption.yaml)
+    - type: switch
+      configs:
+        - file(mask/word_mask_corruption.yaml)
         - file(mask/char_mask_corruption.yaml)
-    - file(mask/word_mask_corruption.yaml)
-  probabilities:
-    - 0.8
-    - 0.2
+      probabilities: [0.5, 0.5]
+  probabilities: [0.8, 0.2]
 - type: language_dropout
   prob: 0.25

@@ -1,7 +1,7 @@
 # long mask corruption
 # mask 20% of all tokens in word mode
 # at least 12 consecutive words, but on average
-# 12 + 1 / 0.2 - 1 = 8 + 4 = 16 words
+# 12 + 1 / 0.2 - 1 = 12 + 4 = 16 words
 type: mask_corruption
 prob: 0.2
 mask_token: <mask>

@@ -52,6 +52,7 @@ train:
   num_epochs: env(NUM_EPOCHS:1)
   eval_interval: eval(1 / env(EVAL_PER_EPOCH:20))
   log_interval: eval(1 / env(LOG_PER_EPOCH:1000))
+  step_interval: eval(1 / env(STEP_PER_EPOCH:1000))
   loss: file(losses/env(LOSS:ce).yaml)
   optimizer:
     type: adamw
@@ -69,12 +70,12 @@ train:
     strategy: weighted
     shuffle: true
     sort: true
-    limit: env(TRAIN_LIMIT:None)
-    max_length: eval(env(MAX_LENGTH:512) // 4)
+    limit: env(TRAIN_LIMIT:null)
+    max_length: eval(env(MAX_LENGTH:512) // 2)
     max_length_scheduler:
       type: multi_step
-      steps: [0.75, 0.90]
-      factors: [2.0, 2.0]
+      steps: [0.75]
+      factors: [2.0]
     buffer_size: env(BUFFER_SIZE:128)
     prefetch_factor: env(PREFETCH_FACTOR:512)
     num_threads: eval(env(THREADS:None) or len(os.sched_getaffinity(0)) // 2)

@@ -1,27 +1,11 @@
-type: switch
-configs:
-  # extreme mask corruption
-  # mask 40% of all tokens in char mode
-  # at least 6 consecutive chars, but on average
-  # 8 + 1 / 0.1 - 1 = 8 + 9 = 17 chars
-  - type: mask_corruption
-    prob: 0.4
-    mask_token: <mask>
-    mode:
-      type: char
-      min: 8
-      prob: 0.1
-  # moderate mask corruption
-  # mask 20% of all tokens in char mode
-  # at least 3 consecutive chars, but on average
-  # 3 + 1 / 0.2 - 1 = 3 + 4 = 7 chars
-  - type: mask_corruption
-    prob: 0.2
-    mask_token: <mask>
-    mode: 
-      type: char
-      min: 3
-      prob: 0.2
-probabilities:
-  - 0.2
-  - 0.8
+# short mask corruption
+# mask 20% of all tokens in char mode
+# at least 4 consecutive words, but on average
+# 4 + 1 / 0.2 - 1 = 4 + 4 = 8 chars
+type: mask_corruption
+prob: 0.2
+mask_token: <mask>
+mode:
+  type: char
+  min: 4
+  prob: 0.2
