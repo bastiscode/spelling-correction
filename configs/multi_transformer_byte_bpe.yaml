@@ -75,7 +75,7 @@ train:
       type: multi_step
       steps: [0.75, 0.90]
       factors: [2.0, 2.0]
-    buffer_size: env(BUFFER_SIZE:128)
+    buffer_size: env(BUFFER_SIZE:512)
     prefetch_factor: env(PREFETCH_FACTOR:512)
     num_threads: eval(env(THREADS:None) or len(os.sched_getaffinity(0)) // 2)
     batch_limit: eval(env(MAX_LENGTH:512) * env(BATCH_LIMIT:32))
