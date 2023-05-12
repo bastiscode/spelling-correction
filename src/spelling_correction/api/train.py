@@ -33,6 +33,8 @@ class SpellingCorrectionTrainer(Trainer):
         batch: data.DataBatch
     ) -> Tuple[Dict[str, Any], torch.Tensor]:
         assert len(batch) > 0, "got empty batch"
+        max_length = self.cfg["train"]["data"]["max_length"]
+
         (
             token_ids_np,
             pad_mask_np,
@@ -41,6 +43,11 @@ class SpellingCorrectionTrainer(Trainer):
             labels_np,
             label_info
         ) = batch.tensors()
+
+        token_ids_np = token_ids_np[:, :max_length]
+        pad_mask_np = pad_mask_np[:, :max_length]
+        lengths = [min(length, max_length) for length in lengths]
+
         inputs = {
             "token_ids": torch.from_numpy(token_ids_np).to(
                 non_blocking=True,
@@ -54,6 +61,7 @@ class SpellingCorrectionTrainer(Trainer):
             **api.to(info, self.info.device)
         }
 
+        labels_np = labels_np[:, :max_length]
         labels = torch.from_numpy(labels_np).to(
             non_blocking=True,
             dtype=torch.long,
@@ -64,6 +72,18 @@ class SpellingCorrectionTrainer(Trainer):
             # for encoder decoder models we need to provide additional
             # information for the targets
             label_info = api.to(label_info, self.info.device)
+
+            inputs["target_token_ids"] = label_info.pop(
+                "token_ids"
+            )[:, :max_length]
+            inputs["target_padding_mask"] = label_info.pop(
+                "padding_mask"
+            )[:, :max_length]
+            inputs["target_lengths"] = [
+                min(length, max_length)
+                for length in label_info.pop("lengths")
+            ]
+
             for k, v in label_info.items():
                 inputs[f"target_{k}"] = v
 

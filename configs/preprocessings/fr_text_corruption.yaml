@@ -1,4 +1,4 @@
-- file(clean_and_normalize.yaml)
+- file(env(CLEAN_CONFIG:clean_normalize_substring.yaml))
 - type: switch
   configs:
     - type: chain

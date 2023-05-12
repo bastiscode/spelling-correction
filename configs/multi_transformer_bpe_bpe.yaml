@@ -1,0 +1,113 @@
+experiment:
+  name: env(EXPERIMENT_NAME:multi_byte_large)
+
+seed: 22
+
+input_tokenizer: file(tokenizers/bpe_multi.yaml)
+output_tokenizer: file(tokenizers/bpe_multi.yaml)
+
+model:
+  type: encoder_decoder_with_head
+  memory: encoder
+  encoder_embedding:
+    type: standard
+    embedding_dim: env(DIM:768)
+    dropout: 0.1
+    mode: norm
+    positional_embeddings: sinusoidal
+    max_length: eval(env(MAX_LENGTH:512) * 4)
+  encoder:
+    type: transformer
+    dim: env(DIM:768)
+    num_layers: eval(round(env(NUM_LAYERS:12) * 2/3))
+    heads: eval(env(DIM:768) // 64)
+    ffw_dim: eval(env(DIM:768) * 4)
+    with_pos: attention
+    dropout: 0.1
+  # decoder_embedding:
+  #   type: standard
+  #   embedding_dim: env(DIM:768)
+  #   dropout: 0.1
+  #   mode: norm
+  #   positional_embeddings: sinusoidal
+  #   max_length: eval(env(MAX_LENGTH:512) * 4)
+  decoder:
+    type: transformer
+    memories: [encoder]
+    dim: env(DIM:768)
+    num_layers: eval(round(env(NUM_LAYERS:12) * 1/3))
+    heads: eval(env(DIM:768) // 64)
+    ffw_dim: eval(env(DIM:768) * 4)
+    with_pos: attention
+    dropout: 0.1
+
+train:
+  mixed_precision: env(MIXED_PRECISION:true)
+  mixed_precision_dtype: env(MIXED_PRECISION_DTYPE:fp16)
+  clip_grad_norm: env(CLIP_GRAD_NORM:1.0)
+  num_epochs: env(NUM_EPOCHS:1)
+  eval_interval: eval(1 / env(EVAL_PER_EPOCH:20))
+  log_interval: eval(1 / env(LOG_PER_EPOCH:1000))
+  step_interval: eval(1 / env(STEP_PER_EPOCH:1000))
+  loss: file(losses/env(LOSS:ce).yaml)
+  optimizer:
+    type: adamw
+    lr: env(LR:0.0001)
+    weight_decay: 0.01
+  lr_scheduler:
+    type: multi_step_with_warmup
+    warmup_steps: env(WARMUP_STEPS:0.01)
+    steps: [0.5, 0.75, 0.9]
+    factors: [0.5, 0.2, 0.1]
+  metrics:
+    text_generation:
+      max_items: 8
+  data:
+    strategy: weighted
+    shuffle: true
+    sort: true
+    limit: env(TRAIN_LIMIT:null)
+    max_length: env(MAX_LENGTH:512)
+    buffer_size: env(BUFFER_SIZE:512)
+    prefetch_factor: env(PREFETCH_FACTOR:512)
+    num_threads: eval(env(THREADS:None) or len(os.sched_getaffinity(0)) // 2)
+    batch_limit: eval(env(MAX_LENGTH:512) * env(BATCH_LIMIT:32))
+    batch_limit_type: padded_item_size
+    default_language: <lang:unk>
+    pipeline:
+      tokenizer: file(tokenizers/bpe_multi.yaml)
+      labeling:
+        type: sequence_generation
+        tokenizer: file(tokenizers/bpe_multi.yaml)
+    sources:
+      - type: file
+        path: env(EN_DATA_FILE:datasets/wikidump_en.clean.dedup.txt)
+        preprocessing: file(preprocessings/en_text_corruption.yaml)
+        # temp_dir: abspath(env(TMP))
+        language: <lang:en>
+      # - type: file
+      #   path: env(DE_DATA_FILE:datasets/wikidump_de.clean.dedup.txt)
+      #   preprocessing: file(preprocessings/de_text_corruption.yaml)
+      #   # temp_dir: abspath(env(TMP))
+      #   language: <lang:de>
+      # - type: file
+      #   path: env(FR_DATA_FILE:datasets/wikidump_fr.clean.dedup.txt)
+      #   preprocessing: file(preprocessings/fr_text_corruption.yaml)
+      #   # temp_dir: abspath(env(TMP))
+      #   language: <lang:fr>
+      # - type: file
+      #   path: env(IT_DATA_FILE:datasets/wikidump_it.clean.dedup.txt)
+      #   preprocessing: file(preprocessings/it_text_corruption.yaml)
+      #   # temp_dir: abspath(env(TMP))
+      #   language: <lang:it>
+      # - type: file
+      #   path: env(ES_DATA_FILE:datasets/wikidump_es.clean.dedup.txt)
+      #   preprocessing: file(preprocessings/es_text_corruption.yaml)
+      #   # temp_dir: abspath(env(TMP))
+      #   language: <lang:es>
+      # - type: file
+      #   path: env(PT_DATA_FILE:datasets/wikidump_pt.clean.dedup.txt)
+      #   preprocessing: file(preprocessings/pt_text_corruption.yaml)
+      #   # temp_dir: abspath(env(TMP))
+      #   language: <lang:pt>
+    val: env(VAL_LIMIT:10000)

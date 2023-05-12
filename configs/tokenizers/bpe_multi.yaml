@@ -1,6 +1,6 @@
 tokenize:
   type: bpe
-  merge_file: relpath(bpe_multi_16384_3.merges)
+  merge_file: env(BPE_MERGE_FILE:data/multi/bpe_multi_16384_3.merges)
 special:
   tokens: [<bos>, <eos>, <pad>]
   pad: <pad>
