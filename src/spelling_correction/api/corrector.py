@@ -85,7 +85,6 @@ class SpellingCorrector(corrector.TextCorrector):
     def context_length(self) -> int:
         raise NotImplementedError
 
-    @property
     def supported_languages(self) -> Optional[List[str]]:
         lang_cfg = self.cfg["input_tokenizer"].get("language")
         if lang_cfg is None:
@@ -95,15 +94,17 @@ class SpellingCorrector(corrector.TextCorrector):
 
     def __init__(
         self,
-            model_dir: str,
-            device: Union[str, int]
+        model_dir: str,
+        device: Union[str, int]
     ) -> None:
         super().__init__(model_dir, device)
         precision = self.cfg["train"].get("mixed_precision_dtype", "fp32")
         self.set_precision(precision)
         self.logger.debug(f"loaded model config:\n{self.cfg['model']}")
         self.logger.info(
-            f"running {self.name} whitespace corrector on device {device_info(self.device)}")
+            f"running {self.name} spelling corrector "
+            f"on device {device_info(self.device)}"
+        )
         self.input_tokenizer = tokenization.Tokenizer.from_config(
             self.cfg["input_tokenizer"]
         )
@@ -284,7 +285,10 @@ class SpellingCorrector(corrector.TextCorrector):
         input_is_string = isinstance(inputs, str)
         assert (
             input_is_string
-            or (isinstance(inputs, list) and all(isinstance(ipt, str) for ipt in inputs))
+            or (
+                isinstance(inputs, list)
+                and all(isinstance(ipt, str) for ipt in inputs)
+            )
         ), "input needs to be a string or a list of strings"
 
         if input_is_string:
@@ -292,8 +296,9 @@ class SpellingCorrector(corrector.TextCorrector):
 
         if languages is not None:
             if input_is_string:
-                assert isinstance(
-                    languages, str), "language must be a string if specified and input is a string"
+                assert isinstance(languages, str), \
+                    "language must be a string if specified and " \
+                    "input is a string"
                 langs = [languages]
             else:
                 assert (
@@ -313,7 +318,8 @@ class SpellingCorrector(corrector.TextCorrector):
             num_threads,
         )
 
-        progress_desc = f"Correcting whitespaces in {len(inputs)} sequences"
+        progress_desc = f"Correcting spelling errors in " \
+            f"{len(inputs)} sequences"
         progress_total = len(inputs)
         progress_unit = "seq"
 

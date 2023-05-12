@@ -145,14 +145,7 @@ def model_from_config(
     cfg = copy.deepcopy(cfg)
     model_type = cfg.pop("type")
 
-    if model_type == "encoder_with_heads":
-        raise NotImplementedError
-        # embedding = embedding_from_config(cfg["embedding"], input_tokenizer)
-        # encoder = encoder_from_config(cfg["encoder"])
-        # head = head_from_config(cfg["head"])
-        # return SpellingCorrectionModel(embedding, encoder, head)
-
-    elif model_type == "encoder_decoder_with_head":
+    if model_type == "encoder_decoder_with_head":
         encoder_embedding = embedding_from_config(
             cfg["encoder_embedding"], input_tokenizer
         )
