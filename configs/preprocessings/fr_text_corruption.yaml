@@ -5,7 +5,7 @@ configs:
   configs:
   - type: chain
     configs:
-      - file(en/spelling_corruption.yaml)
+      - file(fr/spelling_corruption.yaml)
       - file(whitespace/whitespace_corruption.yaml)
       - type: mark
         key: state
