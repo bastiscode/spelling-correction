@@ -3,7 +3,7 @@ tokenize:
   groups: code_points
   pad_to_multiple_of: 32
 special:
-  tokens: [<bos>, <eos>, <pad>, <mask>]
-  pad: <pad>
-  prefix: [<bos>]
-  suffix: [<eos>]
+  tokens: [(bos), (eos), (pad), (mask)]
+  pad: (pad)
+  prefix: [(bos)]
+  suffix: [(eos)]

@@ -1,8 +1,29 @@
 tokenize:
   type: bpe
   merge_file: env(BPE_MERGE_FILE:data/multi/bpe_multi_16384_3.merges)
+  max_vocab_size: env(BPE_VOCAB_SIZE:16384)
 special:
-  tokens: [<bos>, <eos>, <pad>]
-  pad: <pad>
-  prefix: [<bos>]
-  suffix: [<eos>]
+  tokens: 
+    - (bos)
+    - (eos)
+    - (pad)
+    - (mask)
+    - (lang:unk)
+    - (lang:en)
+    - (lang:de)
+    - (lang:es)
+    - (lang:fr)
+    - (lang:pt)
+    - (lang:it)
+  pad: (pad)
+  prefix: [(bos)]
+  suffix: [(eos)]
+language:
+  default_language: (lang:unk)
+  languages:
+    - (lang:en)
+    - (lang:de)
+    - (lang:es)
+    - (lang:fr)
+    - (lang:it)
+    - (lang:pt)

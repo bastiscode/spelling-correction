@@ -1,0 +1,9 @@
+tokenize:
+  type: bpe
+  merge_file: env(BPE_MERGE_FILE:data/multi/bpe_multi_16384_3.merges)
+  max_vocab_size: env(BPE_VOCAB_SIZE:16384)
+special:
+  tokens: [(bos), (eos), (pad), (mask)]
+  pad: (pad)
+  prefix: [(bos)]
+  suffix: [(eos)]

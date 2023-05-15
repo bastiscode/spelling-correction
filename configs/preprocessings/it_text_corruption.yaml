@@ -1,15 +1,18 @@
-- file(env(CLEAN_CONFIG:clean_normalize_substring.yaml))
+type: chain
+configs:
+- file(env(CLEAN_CONFIG:clean_normalize.yaml))
 - type: switch
   configs:
-    - type: chain
-      configs:
-        - file(it/spelling_corruption.yaml)
-        - file(whitespace/whitespace_corruption.yaml)
-    - type: switch
-      configs:
-        - file(mask/word_mask_corruption.yaml)
-        - file(mask/char_mask_corruption.yaml)
-      probabilities: [0.5, 0.5]
+  - type: chain
+    configs:
+      - file(en/spelling_corruption.yaml)
+      - file(whitespace/whitespace_corruption.yaml)
+      - type: mark
+        key: state
+        value: corrupted
+  - type: mark
+    key: state
+    value: uncorrupted
   probabilities: [0.8, 0.2]
 - type: language_dropout
   prob: 0.25
