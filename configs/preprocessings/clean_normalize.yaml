@@ -4,5 +4,3 @@ configs:
   - type: normalize
     scheme: NFKC
   - type: overwrite
-  - type: byte_substring
-    max_bytes: eval(env(MAX_LENGTH:512) * env(MAX_LENGTH_FACTOR:5))
