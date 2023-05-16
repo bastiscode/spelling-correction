@@ -1,8 +1,0 @@
-type: chain
-configs:
-  - type: clean
-  - type: normalize
-    scheme: NFKC
-  - type: overwrite
-  - type: byte_substring
-    max_bytes: eval(env(MAX_LENGTH:512) - env(NUM_SPECIAL_TOKENS:4))
