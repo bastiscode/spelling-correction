@@ -74,7 +74,7 @@ class SpellingCorrector(corrector.TextCorrector):
 
     @property
     def max_length(self) -> int:
-        return max(512, self.cfg["train"]["max_length"])
+        return max(512, self.cfg["train"]["data"]["max_length"])
 
     @property
     def context_length(self) -> int:
