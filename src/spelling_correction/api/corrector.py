@@ -74,12 +74,7 @@ class SpellingCorrector(corrector.TextCorrector):
 
     @property
     def max_length(self) -> int:
-        if self.cfg["model"]["type"] == "encoder_decoder_with_head":
-            return self.cfg["model"]["encoder_embedding"]["max_length"] // 4
-        else:
-            raise ValueError(
-                f"unknown model type: {self.cfg['model']['type']}"
-            )
+        return max(512, self.cfg["train"]["max_length"])
 
     @property
     def context_length(self) -> int:
@@ -134,7 +129,7 @@ class SpellingCorrector(corrector.TextCorrector):
         # even though some models work with arbitrary long sequences
         # (e.g. LSTM), for better accuracy
         max_length = self.max_length - pfx - sfx
-        if self.cfg["input_tokenizer"]["tokenize"]["type"] == "byte":
+        if self.cfg["input_tokenizer"]["tokenize"]["type"] in {"byte", "bpe"}:
             window_cfg = {
                 "type": "byte",
                 "max_bytes": max_length,
@@ -142,7 +137,7 @@ class SpellingCorrector(corrector.TextCorrector):
             }
         else:
             raise ValueError(
-                "the input tokenizer must be of type 'byte' \
+                "the input tokenizer must be of type 'byte' or 'bpe' \
                 for spelling correction"
             )
 
