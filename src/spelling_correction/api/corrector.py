@@ -112,7 +112,9 @@ class SpellingCorrector(corrector.TextCorrector):
 
         # some options for inference
         self._initial_token_ids = self._initial_token_ids.token_ids[:out_pfx]
-        self._eos_token_id = self.output_tokenizer.special_token_to_id("<eos>")
+        self._eos_token_id = self.output_tokenizer.special_token_to_id(
+            tokenization.SpecialTokens.EOS
+        )
         self._strategy = "greedy"
         self._beam_width = 5
         self._sample_top_k = 5
